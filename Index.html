@@ -654,8 +654,8 @@
       }
 
       body.mobile-mode .notice-item__title {
-        font-size: 1.15rem;
-        font-weight: 700;
+        font-size: 1.15rem !important;
+        font-weight: 700 !important;
       }
 
       body.mobile-mode .notice-description {
@@ -1727,31 +1727,31 @@
         box-shadow: 0 22px 48px -28px rgba(var(--color-shadow-rgb), 0.3);
       }
 
-      /* Header del aviso - solo título */
-      .notice-item__header {
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid rgba(var(--color-border-rgb), 0.6);
-      }
-
-      /* Sección del título con botones de admin */
-      .notice-item__title-section {
+      /* Barra de título - SIEMPRE visible */
+      .notice-item__title-bar {
         display: flex;
         flex-direction: row;
         align-items: flex-start;
         justify-content: space-between;
         gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(var(--color-border-rgb), 0.6);
       }
 
-      /* Título del aviso - siempre visible */
+      /* Título del aviso - FORZAR visibilidad */
       .notice-item__title {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--color-text);
-        line-height: 1.4;
         flex: 1;
         min-width: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: var(--color-text) !important;
+        line-height: 1.4 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
       }
 
       /* Botones de admin */
@@ -1832,6 +1832,26 @@
         color: var(--color-text-muted);
         line-height: 1.55;
         white-space: pre-line;
+      }
+
+      .notice-link {
+        color: var(--color-accent);
+        text-decoration: underline;
+        word-break: break-word;
+        transition: color 0.2s ease, opacity 0.2s ease;
+        font-weight: 500;
+      }
+
+      .notice-link:hover,
+      .notice-link:focus {
+        color: var(--color-accent-hover);
+        opacity: 0.8;
+        text-decoration: underline;
+      }
+
+      .notice-link:visited {
+        color: var(--color-accent);
+        opacity: 0.85;
       }
 
       .notice-item__footer {
@@ -5773,29 +5793,28 @@
                 </div>
               ` : '';
 
+              // Asegurar que el título siempre sea visible
+              const displayTitle = notice.title || 'Sin título';
+
               return `
               <article class="notice-item ${resolveNoticePriorityClass(notice)}">
-                <header class="notice-item__header">
-                  <div class="notice-item__title-section">
-                    <h4 class="notice-item__title">${sanitize(notice.title || 'Sin título')}</h4>
-                    ${adminButtons ? `<div class="notice-item__actions-wrapper">${adminButtons}</div>` : ''}
-                  </div>
-                </header>
-                <div class="notice-item__body">
-                  <div class="notice-item__meta">
-                    ${renderOptionalLine(
-                      resolveNoticePriorityLabel(notice),
-                      `<span class="notice-priority">${sanitize(resolveNoticePriorityLabel(notice))}</span>`
-                    )}
-                    ${renderNoticeDate(notice)}
-                  </div>
-                  ${renderOptionalLine(
-                    notice.description,
-                    `<div class="notice-description">${sanitizeWithLineBreaks(notice.description)}</div>`
-                  )}
-                  ${renderNoticeAttachments(notice)}
-                  ${renderNoticeFooter(notice)}
+                <div class="notice-item__title-bar">
+                  <div class="notice-item__title">${sanitize(displayTitle)}</div>
+                  ${adminButtons || ''}
                 </div>
+                <div class="notice-item__meta">
+                  ${renderOptionalLine(
+                    resolveNoticePriorityLabel(notice),
+                    `<span class="notice-priority">${sanitize(resolveNoticePriorityLabel(notice))}</span>`
+                  )}
+                  ${renderNoticeDate(notice)}
+                </div>
+                ${renderOptionalLine(
+                  notice.description,
+                  `<div class="notice-description">${sanitizeWithLinksAndLineBreaks(notice.description)}</div>`
+                )}
+                ${renderNoticeAttachments(notice)}
+                ${renderNoticeFooter(notice)}
               </article>
             `;
             }
@@ -5961,6 +5980,44 @@
         }
         const safe = sanitize(value);
         return safe.replace(/(?:\r\n|\r|\n)/g, '<br>');
+      }
+
+      /**
+       * Sanitiza el texto, convierte URLs en enlaces clickables y preserva saltos de línea
+       */
+      function sanitizeWithLinksAndLineBreaks(value) {
+        if (typeof value !== 'string') {
+          return sanitize(value);
+        }
+
+        // Primero sanitizar el texto
+        const safe = sanitize(value);
+
+        // Regex para detectar URLs (http://, https://, www.)
+        const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+
+        // Convertir URLs en enlaces clickables
+        let result = safe.replace(urlRegex, (match) => {
+          let url = match;
+          let displayUrl = match;
+
+          // Si empieza con www., añadir http://
+          if (match.startsWith('www.')) {
+            url = 'http://' + match;
+          }
+
+          // Acortar la URL para mostrar si es muy larga
+          if (displayUrl.length > 50) {
+            displayUrl = displayUrl.substring(0, 47) + '...';
+          }
+
+          return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="notice-link">${displayUrl}</a>`;
+        });
+
+        // Convertir saltos de línea en <br>
+        result = result.replace(/(?:\r\n|\r|\n)/g, '<br>');
+
+        return result;
       }
 
       function sanitizeUrl(value) {
