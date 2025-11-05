@@ -593,6 +593,20 @@
       }
 
       body.mobile-mode .groups-container {
+        gap: 2rem;
+      }
+
+      body.mobile-mode .group-category {
+        gap: 1.25rem;
+      }
+
+      body.mobile-mode .group-category-header {
+        padding: 1rem 1.2rem;
+        font-size: 1.15rem;
+        border-radius: 12px;
+      }
+
+      body.mobile-mode .group-category-grid {
         grid-template-columns: 1fr;
         gap: 1.1rem;
       }
@@ -1455,6 +1469,54 @@
       }
 
       .groups-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      /* Estilos para categorías de grupos */
+      .group-category {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .group-category-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, rgba(var(--color-accent-rgb), 0.1), rgba(var(--color-accent-rgb), 0.05));
+        border-left: 4px solid var(--color-accent);
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-text);
+        transition: all var(--duration-fast) var(--ease-out);
+      }
+
+      .group-category-header:hover {
+        background: linear-gradient(135deg, rgba(var(--color-accent-rgb), 0.15), rgba(var(--color-accent-rgb), 0.08));
+        transform: translateX(4px);
+      }
+
+      .category-icon {
+        font-size: 1.2rem;
+        line-height: 1;
+      }
+
+      .category-count {
+        margin-left: auto;
+        padding: 0.25rem 0.75rem;
+        background: rgba(var(--color-accent-rgb), 0.2);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--color-accent);
+      }
+
+      .group-category-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 1rem;
@@ -2417,17 +2479,29 @@
       .calendar-cell:nth-child(13) { animation-delay: 125ms; }
       .calendar-cell:nth-child(14) { animation-delay: 145ms; }
 
-      /* Staggered animation for group cards */
-      .group-card {
+      /* Staggered animation for group categories */
+      .group-category {
         animation: fadeInUp var(--duration-normal) var(--ease-out-smooth) backwards;
       }
 
-      .group-card:nth-child(1) { animation-delay: 0ms; }
-      .group-card:nth-child(2) { animation-delay: 50ms; }
-      .group-card:nth-child(3) { animation-delay: 100ms; }
-      .group-card:nth-child(4) { animation-delay: 150ms; }
-      .group-card:nth-child(5) { animation-delay: 200ms; }
-      .group-card:nth-child(6) { animation-delay: 250ms; }
+      .group-category:nth-child(1) { animation-delay: 0ms; }
+      .group-category:nth-child(2) { animation-delay: 100ms; }
+      .group-category:nth-child(3) { animation-delay: 200ms; }
+      .group-category:nth-child(4) { animation-delay: 300ms; }
+      .group-category:nth-child(5) { animation-delay: 400ms; }
+      .group-category:nth-child(6) { animation-delay: 500ms; }
+
+      /* Staggered animation for group cards within categories */
+      .group-card {
+        animation: fadeInUp var(--duration-fast) var(--ease-out-smooth) backwards;
+      }
+
+      .group-card:nth-child(1) { animation-delay: 50ms; }
+      .group-card:nth-child(2) { animation-delay: 80ms; }
+      .group-card:nth-child(3) { animation-delay: 110ms; }
+      .group-card:nth-child(4) { animation-delay: 140ms; }
+      .group-card:nth-child(5) { animation-delay: 170ms; }
+      .group-card:nth-child(6) { animation-delay: 200ms; }
 
       /* Staggered animation for notice items */
       .notice-item {
@@ -4293,6 +4367,84 @@
         grid.appendChild(fragment);
       }
 
+      /**
+       * Extrae el prefijo/categoría de un nombre de grupo
+       * Detecta patrones como "Palabra(s) + Número/Letra" o palabras clave
+       * @param {string} groupName - Nombre del grupo
+       * @returns {string} - Categoría del grupo
+       */
+      function extractGroupPrefix(groupName) {
+        if (!groupName || typeof groupName !== 'string') {
+          return 'Otros';
+        }
+
+        const name = groupName.trim();
+
+        // Patrón 1: "Palabra(s) + Número" (ej: "Grupo 1", "Equipo 2")
+        const numberPattern = /^([A-Za-zÁ-ÿ\s]+?)\s+\d+/;
+        const numberMatch = name.match(numberPattern);
+        if (numberMatch) {
+          return numberMatch[1].trim();
+        }
+
+        // Patrón 2: "Palabra(s) + Letra" (ej: "Grupo A", "Equipo B")
+        const letterPattern = /^([A-Za-zÁ-ÿ\s]+?)\s+[A-Z]$/;
+        const letterMatch = name.match(letterPattern);
+        if (letterMatch) {
+          return letterMatch[1].trim();
+        }
+
+        // Patrón 3: Palabras clave comunes (ej: "Comité de liturgia", "Equipo de pastoral")
+        const keywordPattern = /^(Comité|Equipo|Grupo|Ministerio|Pastoral|Catequesis|Coro|Servicio)\s+(de\s+)?/i;
+        const keywordMatch = name.match(keywordPattern);
+        if (keywordMatch) {
+          // Retornar "Comité de", "Equipo de", etc.
+          return keywordMatch[1] + (keywordMatch[2] ? ' ' + keywordMatch[2].trim() : '');
+        }
+
+        // Sin patrón detectado
+        return 'Otros';
+      }
+
+      /**
+       * Agrupa los grupos por categoría
+       * @param {Array} groups - Array de objetos de grupo
+       * @returns {Array} - Array de objetos {category, groups: []}
+       */
+      function groupByCategory(groups) {
+        if (!Array.isArray(groups) || groups.length === 0) {
+          return [];
+        }
+
+        // Crear un mapa de categorías
+        const categoriesMap = new Map();
+
+        groups.forEach(group => {
+          const category = extractGroupPrefix(group.name);
+
+          if (!categoriesMap.has(category)) {
+            categoriesMap.set(category, []);
+          }
+
+          categoriesMap.get(category).push(group);
+        });
+
+        // Convertir el mapa a un array y ordenar por categoría
+        // "Otros" siempre va al final
+        const categoriesArray = Array.from(categoriesMap, ([category, groups]) => ({
+          category,
+          groups
+        }));
+
+        categoriesArray.sort((a, b) => {
+          if (a.category === 'Otros') return 1;
+          if (b.category === 'Otros') return -1;
+          return a.category.localeCompare(b.category);
+        });
+
+        return categoriesArray;
+      }
+
       function renderGroups() {
         const container = document.getElementById('groupsContainer');
         const groups = Array.isArray(state.groups) ? state.groups : [];
@@ -4302,19 +4454,32 @@
           return;
         }
 
-        container.innerHTML = groups
-          .map(
-            (group) => `
-              <article class="group-card">
-                <h3>${sanitize(group.name)}</h3>
-                ${renderOptionalLine(group.lead, `<p><span class="label">Responsable:</span> ${sanitize(group.lead)}</p>`)}
-                ${renderOptionalLine(group.contact, `<p><span class="label">Contacto:</span> ${sanitize(group.contact)}</p>`)}
-                ${renderMembersList(group.members)}
-                ${renderOptionalLine(group.nextMeeting, `<p><span class="label">Próxima reunión:</span> ${sanitize(group.nextMeeting)}</p>`)}
-                ${renderOptionalLine(group.notes, `<p>${sanitize(group.notes)}</p>`)}
-              </article>
-            `
-          )
+        // Agrupar grupos por categoría
+        const categorizedGroups = groupByCategory(groups);
+
+        // Renderizar grupos agrupados por categoría
+        container.innerHTML = categorizedGroups
+          .map(({ category, groups }) => `
+            <div class="group-category">
+              <h2 class="group-category-header">
+                <span class="category-icon">📁</span>
+                ${sanitize(category)}
+                <span class="category-count">(${groups.length})</span>
+              </h2>
+              <div class="group-category-grid">
+                ${groups.map(group => `
+                  <article class="group-card">
+                    <h3>${sanitize(group.name)}</h3>
+                    ${renderOptionalLine(group.lead, `<p><span class="label">Responsable:</span> ${sanitize(group.lead)}</p>`)}
+                    ${renderOptionalLine(group.contact, `<p><span class="label">Contacto:</span> ${sanitize(group.contact)}</p>`)}
+                    ${renderMembersList(group.members)}
+                    ${renderOptionalLine(group.nextMeeting, `<p><span class="label">Próxima reunión:</span> ${sanitize(group.nextMeeting)}</p>`)}
+                    ${renderOptionalLine(group.notes, `<p>${sanitize(group.notes)}</p>`)}
+                  </article>
+                `).join('')}
+              </div>
+            </div>
+          `)
           .join('');
       }
 
