@@ -639,10 +639,9 @@
         box-shadow: 0 24px 48px -28px rgba(var(--color-accent-rgb), 0.3);
       }
 
-      body.mobile-mode .notice-item__title h4 {
-        font-size: 1.08rem;
+      body.mobile-mode .notice-item__title {
+        font-size: 1.15rem;
         font-weight: 700;
-        color: var(--color-text);
       }
 
       body.mobile-mode .notice-description {
@@ -1565,44 +1564,55 @@
         box-shadow: 0 22px 48px -28px rgba(var(--color-shadow-rgb), 0.3);
       }
 
+      /* Header del aviso - solo título */
       .notice-item__header {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(var(--color-border-rgb), 0.6);
+      }
+
+      /* Sección del título con botones de admin */
+      .notice-item__title-section {
         display: flex;
         flex-direction: row;
         align-items: flex-start;
         justify-content: space-between;
         gap: 0.75rem;
-        margin-bottom: 0.5rem;
       }
 
-      .notice-item__title-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+      /* Título del aviso - siempre visible */
+      .notice-item__title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-text);
+        line-height: 1.4;
         flex: 1;
         min-width: 0;
       }
 
-      .notice-item__title {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--color-text);
-        line-height: 1.4;
+      /* Botones de admin */
+      .notice-item__actions-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
       }
 
+      /* Cuerpo del aviso */
+      .notice-item__body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      /* Metadatos (prioridad y fecha) */
       .notice-item__meta {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 0.5rem;
-      }
-
-      .notice-item__actions-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.5rem;
-        flex-shrink: 0;
       }
 
       .notice-priority {
@@ -1667,6 +1677,7 @@
         gap: 0.45rem 1.2rem;
         font-size: 0.85rem;
         color: var(--color-text-muted);
+        margin-top: 0.5rem;
       }
 
       .notice-contact {
@@ -5307,24 +5318,26 @@
               return `
               <article class="notice-item ${resolveNoticePriorityClass(notice)}">
                 <header class="notice-item__header">
-                  <div class="notice-item__title-wrapper">
-                    ${renderOptionalLine(notice.title, `<h4 class="notice-item__title">${sanitize(notice.title)}</h4>`)}
-                    <div class="notice-item__meta">
-                      ${renderOptionalLine(
-                        resolveNoticePriorityLabel(notice),
-                        `<span class="notice-priority">${sanitize(resolveNoticePriorityLabel(notice))}</span>`
-                      )}
-                      ${renderNoticeDate(notice)}
-                    </div>
+                  <div class="notice-item__title-section">
+                    <h4 class="notice-item__title">${sanitize(notice.title || 'Sin título')}</h4>
+                    ${adminButtons ? `<div class="notice-item__actions-wrapper">${adminButtons}</div>` : ''}
                   </div>
-                  ${adminButtons ? `<div class="notice-item__actions-wrapper">${adminButtons}</div>` : ''}
                 </header>
-                ${renderOptionalLine(
-                  notice.description,
-                  `<div class="notice-description">${sanitizeWithLineBreaks(notice.description)}</div>`
-                )}
-                ${renderNoticeAttachments(notice)}
-                ${renderNoticeFooter(notice)}
+                <div class="notice-item__body">
+                  <div class="notice-item__meta">
+                    ${renderOptionalLine(
+                      resolveNoticePriorityLabel(notice),
+                      `<span class="notice-priority">${sanitize(resolveNoticePriorityLabel(notice))}</span>`
+                    )}
+                    ${renderNoticeDate(notice)}
+                  </div>
+                  ${renderOptionalLine(
+                    notice.description,
+                    `<div class="notice-description">${sanitizeWithLineBreaks(notice.description)}</div>`
+                  )}
+                  ${renderNoticeAttachments(notice)}
+                  ${renderNoticeFooter(notice)}
+                </div>
               </article>
             `;
             }
