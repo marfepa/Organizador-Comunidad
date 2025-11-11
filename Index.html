@@ -663,6 +663,11 @@
         color: var(--color-text-muted);
       }
 
+      body.mobile-mode .notice-link {
+        font-size: 1.02rem;
+        text-decoration: underline;
+      }
+
       body.mobile-mode .notice-priority,
       body.mobile-mode .notice-date {
         font-size: 0.88rem;
@@ -1817,6 +1822,18 @@
         color: var(--color-text-muted);
         line-height: 1.55;
         white-space: pre-line;
+      }
+
+      .notice-link {
+        color: var(--color-accent);
+        text-decoration: underline;
+        word-break: break-all;
+        transition: color 0.2s ease;
+      }
+
+      .notice-link:hover {
+        color: var(--color-accent-hover);
+        text-decoration: none;
       }
 
       .notice-item__footer {
@@ -5774,7 +5791,7 @@
                 </div>
                 ${renderOptionalLine(
                   notice.description,
-                  `<div class="notice-description">${sanitizeWithLineBreaks(notice.description)}</div>`
+                  `<div class="notice-description">${linkifyText(notice.description)}</div>`
                 )}
                 ${renderNoticeAttachments(notice)}
                 ${renderNoticeFooter(notice)}
@@ -5943,6 +5960,25 @@
         }
         const safe = sanitize(value);
         return safe.replace(/(?:\r\n|\r|\n)/g, '<br>');
+      }
+
+      function linkifyText(value) {
+        if (typeof value !== 'string') {
+          return sanitize(value);
+        }
+        const safe = sanitize(value);
+
+        // Detectar URLs y convertirlas en enlaces clicables
+        // Soporta URLs que empiecen con http://, https:// o www.
+        const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+        const withLinks = safe.replace(urlRegex, (url) => {
+          // Si la URL no tiene protocolo, añadir https://
+          const href = url.startsWith('www.') ? `https://${url}` : url;
+          return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="notice-link">${url}</a>`;
+        });
+
+        // Convertir saltos de línea
+        return withLinks.replace(/(?:\r\n|\r|\n)/g, '<br>');
       }
 
       function sanitizeUrl(value) {
